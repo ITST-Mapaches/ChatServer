@@ -8,8 +8,13 @@ public class Hilo extends Thread {
     //! Atributos
     //socket cliente
     private Socket socketCliente;
+
+    //nombre del usuario
+    private String nombre;
+
     //para flujo de entrada del socket
     private BufferedReader entrada;
+
     //para flujo de salida del socket
     private BufferedWriter salida;
 
@@ -31,13 +36,31 @@ public class Hilo extends Thread {
             //permite escribir información
             this.salida = new BufferedWriter(new OutputStreamWriter(this.socketCliente.getOutputStream()));
 
+            //invocacion a metodo que registra el nombre de usuario
+            registrarNombre();
+
             //se agrega a si mismo el objeto a la lista de hilos
             this.hilos.add(this);
 
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
 
+    /**
+     * Método que registra el nombre de usuario
+     */
+    public void registrarNombre() {
+        try {
+            this.salida.write("Por favor, ingresa tu nombre: ");
+            this.salida.newLine();
+            this.salida.flush();
+
+            //asignamos la primer respuesta del cliente como el nombre
+            setNombre(this.entrada.readLine());
+        } catch (IOException e) {
+            System.out.println("Error al obtener el nombre de un usuario");
+        }
     }
 
     /**
@@ -53,13 +76,14 @@ public class Hilo extends Thread {
                 lectura = this.entrada.readLine();
 
                 //imprimimos en consola la entrada
-                System.out.println(lectura);
+                System.out.println(this.nombre + ": " + lectura);
 
                 //replicamos el valor recibido en el flujo de entrada
                 replicarMensaje(lectura);
             }
         } catch (Exception e) {
             System.out.println("Algo salio mal en la lectura del flujo de entrada...");
+            System.exit(1);
         }
     }
 
@@ -79,13 +103,12 @@ public class Hilo extends Thread {
                     //replicamos el mensaje recibido
 
                     //almacena el mensaje en el buffer
-                    hilo.salida.write(mensaje);
+                    hilo.salida.write(this.nombre + ": " + mensaje);
                     //salto de línea
                     hilo.salida.newLine();
                     //envía el mensaje a través del flujo de salida
                     hilo.salida.flush();
                 } catch (IOException e) {
-
                     System.out.println("Algo salio mal al intentar replicar el mensaje...");
                 }
             }
@@ -104,11 +127,12 @@ public class Hilo extends Thread {
 
 
     //metodos de acceso (get y set)
-    public Socket getSocket() {
+
+    public Socket getSocketCliente() {
         return socketCliente;
     }
 
-    public void setSocket(Socket socketCliente) {
+    public void setSocketCliente(Socket socketCliente) {
         this.socketCliente = socketCliente;
     }
 
@@ -134,6 +158,15 @@ public class Hilo extends Thread {
 
     public static void setHilos(ArrayList<Hilo> hilos) {
         Hilo.hilos = hilos;
+    }
+
+
+    public String getNombre() {
+        return nombre;
+    }
+
+    public void setNombre(String nombre) {
+        this.nombre = nombre;
     }
 
     /**
